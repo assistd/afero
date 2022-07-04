@@ -45,13 +45,24 @@ func ReadDir(fs Fs, dirname string) ([]os.FileInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	list, err := f.Readdir(-1)
-	f.Close()
-	if err != nil {
-		return nil, err
+	defer f.Close()
+
+	infos := make([]os.FileInfo, 0)
+	for {
+		info, err := f.Readdir(-1)
+		if len(info) > 0 {
+			infos = append(infos, info...)
+		}
+		if err == nil {
+			break
+		}
 	}
-	sort.Sort(byName(list))
-	return list, nil
+
+	if err != nil {
+		return infos, err
+	}
+	sort.Sort(byName(infos))
+	return infos, nil
 }
 
 // ReadFile reads the file named by filename and returns the contents.
